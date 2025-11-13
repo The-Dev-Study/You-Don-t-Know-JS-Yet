@@ -104,4 +104,77 @@ doSomethingUseful(...it);
 
 
 ➡️ `for...of`와 전개 구문(`...`) 모두 내부적으로 **이터레이터 소비 프로토콜**을 준수  
-이 문법들을 통해 이터레이터가 제공하는 값들을 추출하여 배열, 인수 목록 등 **원하는 구조에 간결하게 할당**할 수 있게 되며, 이것이 이터레이션 패턴의 범용성과 유용성을 높여줌
+이 문법들을 통해 이터레이터가 제공하는 값들을 추출하여 배열, 인수 목록 등 **원하는 구조에 간결하게 할당**할 수 있게 되며, 이것이 이터레이션 패턴의 범용성과 유용성을 높여줌  
+
+### 3.1.2 이터러블
+: 이터러블은 순회 가능한 값을 의미하며, 이터레이터 소비 프로토콜의 핵심 대상
+
+- 이터레이터 소비 프로토콜은 이터러블을 사용해 이터레이터 인스턴스를 생성하고, 이 인스턴스를 소비하여 연산을 완료하는 기술
+- 이터러블은 호출될 때마다 새로운 이터레이터 인스턴스를 생성할 수 있으므로, 하나의 이터러블을 여러 번 독립적으로 소비할 수 있음
+-  ES6부터 문자열, 배열, Map, Set 같은 자바스크립트의 기본 자료구조 및 컬렉션은 모두 이터러블로 정의
+
+```javascript
+var arr = [10, 20, 30];
+
+for (let val of arr) {
+  console.log('배열의 값: ', val);
+};
+```
+
+1. 배열
+이터러블이기 때문에 전개 구문(...)로 이터레이터를 소비해 배열을 얕게 복사할 수 있음  
+```javascript
+var copiedArray = [...arr];
+```
+
+2. 문자열
+역시 이터러블 따라서 전개구문으로 글자 하나하나를 순회할 수 있음 
+```
+var greeting = 'hello world';
+var chars = [...greeting];
+
+chars;
+// ['h','e','l','l','o',' ','w','o','r','l','d'];
+```
+
+3. Map(키-값 자료구조)
+기본 이터레이터를 지원함
+
+Map의 내장 메서드 entries를 호출하면 맵의 값뿐만 아니라 키까지 포함한 2차원 배열인 entry 튜플 순회 가능  
+```javascript
+var buttonNames = new Map();
+buttonNames.set(btn1, 'button 1');
+buttonNames.set(btn2, 'button 2');
+
+for(let [btn, btnName] of buttonNames) {
+  btn.addEventListener('click', function onClick() {
+      console.log('click!', btnName);
+  });
+}
+```
+for..of는 맵이 지원하는 기본 이터레이터를 순회하며 [btn, btnName] 문법(배열 구조 분해: array destructuring)을 사용해 튜플을 키, 값으로 분해  
+그 결과 첫 번째 반복문이 돌 때는 btn에 btn1이, btnName에는 button 1이 할당  
+```
+🤔 만약 값만 추출하고 싶다면? values() 사용하세요  
+```javascript
+for(let btnName of buttonNames.values()) {
+    console.log(btnName);
+} // button 1, button 2
+```
+🤔 배열의 인덱스와 값을 대상으로 순회하고 싶다면? entries() 사용하세요  
+```javascript
+var arr = [10, 20, 30];
+
+for(let [idx, val] of arr.entries()) {
+    console.log(`${idx} : ${val}`);
+}
+// 0 : 10
+// 1 : 20
+// 2 : 30
+```
+
+기본 이터러블을 사용하지 않아도 이터레이션 프로토콜을 준수하는 자료구조를 직접 만든다면, 해당 자료구조에 ..., for...of 반복문을 적용할 수 있음  
+이렇게 표준화된 이터레이션 프로토콜을 준수하면 전반적인 코드 가독성과 이해도가 올라감   
+
+
+<br />
