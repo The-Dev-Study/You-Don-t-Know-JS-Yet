@@ -178,3 +178,91 @@ for(let [idx, val] of arr.entries()) {
 
 
 <br />
+
+# 3.2 클로저
+> 클로저는 함수가 정의될 때의 스코프 환경을 기억하고, 나중에 다른 스코프에서 실행될 때도 그 기억된 스코프의 변수에 접근할 수 있게 해주는 자바스크립트 함수의 타고난 특징
+
+
+- 함수가 정의된 외부 스코프의 변수를 에워싸서(close over), 해당 외부 스코프가 종료된 후에도 그 변수에 계속 접근할 수 있도록 보존하는 기능
+- 클로저는 객체의 특징이 아니라 함수의 특징
+- 클로저를 보려면, 함수를 정의된 스코프가 아닌 다른 스코프에서 실행 (일반적으로 함수를 반환하거나 콜백으로 전달할 때 발생)
+
+```
+function greeting(msg) {
+    return function who(name) { // who()가 msg를 에워싼다 (클로저)
+        console.log(`${name}, ${msg}`); 
+    };
+};
+
+var hello = greeting('hello'); // 1. greeting 실행 종료
+var howdy = greeting('how do you do'); // 2. greeting 실행 종료
+
+hello('jimin'); // jimin, hello
+howdy('jimin');  // jimin, how do you do
+```
+- 외부함수인 greeting()이 먼저 실행 내부함수인 who()의 인스턴스가 생성
+- 내부함수인 who()는 greeting()이 있는 외부 스코프에서 넘어온 매개변수 msg를 에워쌈(close over)
+- greeting()이 호출되면 내부함수 who()가 반환 ➡️ 이때 이 함수에 대한 참조가 외부 스코프에 있는 hello 변수에 할당
+
+- 두 번째 gretting이 호출되면 새로운 내부 함수 인스턴스가 생성
+- 이 인스턴스 역시 매개변수로부터 넘겨받은 새로운 msg를 에워쌈
+- 반환된 내부함수에 대한 참조는 howdy에 할당됨
+
+여기서 대부분은 greeting() 실행 종료된 후 함수에서 사용했던 변수 전체가 가비지 컬렉션 대상이 되어 메모리에서 삭제될 것이라고 예상  
+💭 그럼 예시에서 첫 번째와 두 번째 greeting()을 호출한 이후 msg가 사라지겠군  
+🧑‍🏫 아님 이 변수들은 사라지지 않음 ➡️ 클로저 때문!  
+who() 함수 인스턴스가 hello나 howdy에 할당되어 아직 살아있기 때문에, 이 인스턴스들은 자신이 에워싼 msg 변수('hello' 또는 'how do you do')를 메모리에서 삭제되지 않도록 보존  
+
+클로저는 변수의 **복사본(스냅샷)**을 사용하는 것이 아니라, 변수 그 자체와 직접적인 관계를 맺음 (참조한다) 
+이 때문에 변수가 업데이트되면 클로저를 통해 접근하는 값도 최신 값으로 반영
+```
+function counter(step = 1) {
+    var count = 0; // count 변수는 클로저에 의해 보존되고, 업데이트
+    return function increaseCount() {
+        count = count + step;
+        return count;
+    };
+}
+
+var incBy1 = counter(1);
+var incBy3 = counter(3);
+
+incBy1(); // 1
+incBy1(); // 2 (count 값이 초기화되지 않고 업데이트됨)
+
+incBy3(); // 3
+incBy3(); // 6
+incBy3(); // 9
+```
+여기서 counter() 함수를 두 번 실행했으므로 내부 함수 increaseCount()의 인스턴스가 두 개 생김  
+이 인스턴스 각각은 외부함수 counter()의 스코프에 있는 변수 counter와 step을 에워쌈  
+➡️ incBy1과 incBy3는 각각 counter 함수 실행 시 만들어진 고유한 클로저 환경을 가지고 있음  
+
+그런데 incBy1()이나 incBy3()을 실행하면 step은 값이 변하지 않지만 count 내부함수가 실행될 때마다 값이 바뀜  
+➡️ 클로저는 스냅샷한 값을 사용하지 않고(count 변수를 보존) 변수 그 자체와 직접적인 관계를 맺기 때문에 incBy1()이나 incBy3을 여러번 실행해도 업데이트된 count(이 보존된 count 변수를 직접 업데이트하기 때문) 값이 초기화되지 않음  
+
+
+클로저는 콜백과 같이 비동기 작업을 수행하는 코드에서 가장 흔하게 볼 수 있음  
+```
+function getSomeData(url) {
+    ajax(url, function onResponse(resp) { // onResponse()가 url을 에워쌈
+        console.log(`${url} response: ${resp}`);
+    });
+}
+
+getSomeData('https://some.url/wherever'); // getSomeData()가 실행 종료되더라도 url 값은 콜백이 실행될 때까지 보존
+```
+내부함수 onResponse()는 url을 에워싸기 때문에 ajax 호출이 완료되고 그 결과가 onResponse() 콜백함수에 의해 처리될 때까지 url을 보존하고 기억함  
+이때 getSomeData()가 곧바로 실행 종료되더라도 특별한 이유가 없다면 매개변수 url을 통해 받은 값은 클로저 안에 보존  
+
+외부 스코프가 항상 함수여야 하는 건 아니지만, 보통 내부 함수에서 하나 이상의 외부 스코프 변수에 접근하려 할 때 클로저를 관찰할 수 있음  
+```
+for(let [idx, btn] of buttons.entries()) { // let은 반복마다 새로운 idx를 만듦
+    btn.addEventListener('click', function onClick() { // onClick()이 매번 새로운 idx를 에워쌈
+        console.log(`click ${idx} button!`);
+    });
+}
+```
+여기선 let을 사용했기때문에 반복이 일어날 때마다 변수 idx, btn은 새로운 블록 스코프(지역 스코프)에서 정의됨  
+또한 반복문이 실행될 때마다 새로운 내부 함수인 onClick()이 만들어지는데, 이 내부함수는 idx를 에워싸서 클릭 이벤트 핸들러가 btn에 할당된 동안 idx를 보존  
+👍 덕분에 특정 버튼을 클릭 시 버튼에 할당된 핸들러가 인덱스를 기억하고 있다 버튼 순서에 맞는 인덱스 값을 출력함  
